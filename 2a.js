@@ -8,11 +8,18 @@ const server = http.createServer(function (request, response) {
   var answer = '';  //設置回應內容
 
   // 請寫 switch完成各個收到不同的請求以及輸出不同的回應字串 (使用 switch)
-  
+    switch (url) {
+      case '/':
+        answer = 'index.html 輸出部分';
+        break;
+      case '/calculator':
+        answer = 'index2.html 輸出部分';
+        break;
+      default:
+        answer = 'error.html 輸出的部分';
+        break;
+    }
 
-
-
-  
   response.setHeader('Content-Type', 'text/plain;charset=utf-8'); //設置回應頭編碼為utf-8，避免中文亂碼
   response.end(answer);
 });
