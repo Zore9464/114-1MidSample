@@ -22,14 +22,14 @@ function updateStock(products, updates) {
     if (updates.hasOwnProperty(product.name)) {
       product.stock = updates[product.name];
     }
-  }
+}
 
   // 輸出結果
   for (let product of products) {
     console.log(`${product.name} 的庫存： ${product.stock}`);
   }
-
-  // 若要讓 console.log(updateStock(...)) 有輸出，可以回傳字串或陣列
+S
+  // 若要讓 console.log(updateStock(...)) 有輸出，可以回傳s字串或陣列
   return products;
 }
 
