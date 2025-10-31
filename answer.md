@@ -265,7 +265,6 @@ const server = http.createServer(function (request, response) {
   let filePath = '';
   let cssFile = '';
 
-  // 使用 switch 處理路由
   switch (url) {
     case '/':
       filePath = './index.ejs';

@@ -55,7 +55,8 @@ const server = http.createServer(function (request, response) {
       cssFile = 'style2.css';
       break;
     default:
-      
+      filePath = './index3.ejs';
+      cssFile = 'style3.css';
       break;
   }
 
