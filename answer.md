@@ -229,7 +229,7 @@ http.createServer((req, res) => {
   console.log('可訪問的路由：http://127.0.0.1:8888/calculator, 其他任意路由');
 });
 ```
-
+![alt text](image-5.png)
 
 
 
@@ -257,6 +257,8 @@ switch (url) {
 ```
 <li>在default分支中加入404頁面的檔案連結 </li>
 <li>為404頁面指定專用樣式檔案 </li>
+
+![alt text](image-6.png)
 2. d.
 
 Ans:
