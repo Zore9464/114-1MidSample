@@ -147,119 +147,6 @@ Ans:
 
 <h3>解決方案：</h3>
 
-<h3>1. 模組引入</h3>
-
-```java
-const http = require('http');    // 建立 HTTP 伺服器
-const fs = require('fs');        // 讀取檔案系統
-const ejs = require('ejs');      // 模板引擎
-const path = require('path');    // 處理檔案路徑
-```
-
-<h3>2.靜態資源處理</h3>
-<h4>功能：識別並服務 CSS、JS、圖片等靜態檔案</h4>
-
-```java
-// 處理靜態檔案（CSS、JS、圖片等）
-const staticExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.ico'];
-const extname = path.extname(url);
-
-if (staticExtensions.includes(extname)) {
-  const filePath = '.' + url;
-
-  const contentTypes = {
-    '.css': 'text/css',
-    '.js': 'text/javascript',
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.gif': 'image/gif',
-    '.ico': 'image/x-icon'
-  };
-
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      console.log('靜態檔案讀取錯誤:', filePath, err);
-      response.writeHead(404);
-      response.end('檔案未找到');
-    } else {
-      response.writeHead(200, {
-        'Content-Type': contentTypes[extname] || 'text/plain'
-      });
-      response.end(data);
-    }
-  });
-  return;
-}
-```
-
-<h3>MIME 類型映射：</h3>
-
-```java
-// MIME（多用途網際網路郵件擴展）
-// 用來告訴瀏覽器「這是什麼類型的檔案」。
-const contentTypes = {
-  '.css': 'text/css',
-  '.js': 'text/javascript',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.ico': 'image/x-icon'
-};
-```
-
-<h3>3. 路由系統</h3>
-<h4>Switch 路由邏輯：</h4>
-
-```java
-let filePath = '';
-let cssFile = '';
-
-// 使用 switch 處理路由
-switch (url) {
-  case '/':
-    filePath = './index.ejs';
-    cssFile = 'style.css';
-    break;
-  case '/calculator':
-    filePath = './index2.ejs';
-    cssFile = 'style2.css';
-    break;
-  default:
-    filePath = './index3.ejs';
-    cssFile = 'style3.css';
-    break;
-}
-```
-
-<h3>4. EJS 模板渲染</h3>
-<h4>讀取和渲染過程：</h4>
-
-```java
-// 讀取並渲染 EJS 頁面
-fs.readFile(filePath, 'utf8', (err, data) => {
-  if (err) {
-    console.log('EJS 檔案讀取錯誤:', err);
-    response.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-    response.end('伺服器讀取檔案錯誤');
-  } else {
-    try {
-      const html = ejs.render(data, {
-        cssFile: cssFile,
-        currentUrl: url
-      });
-      response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      response.end(html);
-    } catch (renderError) {
-      console.log('EJS 渲染錯誤:', renderError);
-      response.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      response.end('EJS 渲染錯誤');
-    }
-  }
-});
-```
-
 <h3>完整程式</h3>
 
 ```java
@@ -269,15 +156,16 @@ const fs = require('fs');
 const ejs = require('ejs');
 const path = require('path');
 
-// 2. 建立伺服器
+// 2. 創建 http 伺服器
 http.createServer((req, res) => {
   const url = req.url;
-  const ext = path.extname(url); ///這行是用來取得「使用者請求的網址」的副檔名。
+  const ext = path.extname(url); // 取得請求網址的副檔名，用於判斷檔案類型
+  console.log("收到請求網址：", url);
 
-  // 處理靜態檔案
-  const mime = { ///用來對應「副檔名」→「回傳時要告訴瀏覽器的檔案格式」。
+  // MIME 類型定義 - 建立副檔名與 Content-Type 的對應關係
+  const mime = {
     '.css': 'text/css',
-    '.js': 'text/javascript',
+    '.js': 'text/javascript', 
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
@@ -285,23 +173,74 @@ http.createServer((req, res) => {
     '.ico': 'image/x-icon'
   };
 
-  if (mime[ext]) { // 如果請求的網址是靜態檔案
+  // 處理靜態檔案（CSS、JS、圖片等）
+  if (mime[ext]) {
     fs.readFile('.' + url, (err, data) => {
       if (err) {
         res.writeHead(404);
         return res.end('檔案未找到');
       }
-      res.writeHead(200, { 'Content-Type': mime[ext] }); /// 這行是用來告訴瀏覽器回傳的檔案格式
+      // 設定正確的 Content-Type 讓瀏覽器能正確解析檔案
+      res.writeHead(200, { 'Content-Type': mime[ext] });
       return res.end(data);
     });
-    return;
+    return; // 靜態檔案處理完成，結束此請求
   }
 
-  let filePath = '';
-  let cssFile = '';
+  // 使用 switch 處理不同路由
+  let filePath = '';  // EJS 模板檔案路徑
+  let cssFile = '';   // 對應的 CSS 檔案名稱
 
-  // 使用 switch 處理路由
   switch (url) {
+    case '/':
+      filePath = './index.ejs';
+      cssFile = 'style.css';
+      break;
+    case '/calculator':
+      filePath = './index2.ejs';
+      cssFile = 'style2.css';
+      break;
+    default:
+      answer = 'error.html 輸出的部分';
+      break;
+  }
+  // 讀取 EJS 模板並渲染成 HTML
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    // 若讀取模板檔案失敗，回傳 500 伺服器錯誤
+    if (err) {
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end('伺服器讀取檔案錯誤');
+    }
+    
+    try {
+      // 使用 EJS 渲染模板，傳入動態資料（CSS 檔案名稱和當前網址）
+      const html = ejs.render(data, { cssFile, currentUrl: url });
+      // 設定回應標頭，告訴瀏覽器這是 UTF-8 編碼的 HTML 內容
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+    } catch (ejsErr) {
+      // 如果 EJS 渲染過程發生錯誤，回傳 500 錯誤
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('EJS 渲染錯誤');
+    }
+  });
+}).listen(8888, () => {
+  console.log('伺服器啟動成功：http://127.0.0.1:8888');
+  console.log('可訪問的路由：http://127.0.0.1:8888/calculator, 其他任意路由');
+});
+```
+
+
+
+
+<h1>2.c.404處理</h1>
+<h2>問題</h2>
+<li>將 404 錯誤處理改為渲染 index3.ejs</li>
+
+Ans:
+``` java
+// 在 2.b 的基礎上修改 default 分支
+switch (url) {
     case '/':
       filePath = './index.ejs';
       cssFile = 'style.css';
@@ -315,54 +254,6 @@ http.createServer((req, res) => {
       cssFile = 'style3.css';
       break;
   }
-
-  // 讀取與渲染 EJS
-  fs.readFile(filePath, 'utf8', (err, data) => {
-    // 若讀取檔案出錯（例如檔案不存在），伺服器會回傳 500 錯誤（Internal Server Error）給瀏覽器：
-    if (err) {
-      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      return res.end('伺服器讀取檔案錯誤');
-    }
-    // ejs.render() 是 EJS 模板引擎 提供的函式
-    try {
-      const html = ejs.render(data, { cssFile, currentUrl: url });
-      /// Tell 瀏覽器 這是一個 HTML 頁面，使用 UTF-8 編碼
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(html);
-      /// 如果在 EJS 渲染過程中出現錯誤回傳EJS 渲染錯誤
-    } catch {
-      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('EJS 渲染錯誤');
-    }
-  });
-}).listen(8888, () => {
-  console.log('伺服器啟動成功：http://127.0.0.1:8888');
-});
-```
-
-
-
-
-<h1>2.c.404處理</h1>
-<h2>問題</h2>
-<li>將 404 錯誤處理改為渲染 index3.ejs</li>
-
-Ans:
-```r
-// 在 2.b 的基礎上修改 default 分支
-switch (url) {
-  case '/':
-    filePath = './index.ejs';
-    cssFile = 'style.css';
-    break;
-  case '/calculator':
-    filePath = './index2.ejs';
-    cssFile = 'style2.css';
-    break;
-  default:
-    filePath = './index3.ejs';
-    cssFile = 'style3.css';
-    break;
 ```
 <li>在default分支中加入404頁面的檔案連結 </li>
 <li>為404頁面指定專用樣式檔案 </li>
