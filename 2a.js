@@ -1,50 +1,41 @@
-//1、引入http模組
+// 1. 引入模組
 const http = require('http');
 const fs = require('fs');
 const ejs = require('ejs');
 const path = require('path');
 
-//2、創建http伺服器
-const server = http.createServer(function (request, response) {
-  const url = request.url;
-  console.log('請求URL:', url);
+// 2. 建立伺服器
+http.createServer((req, res) => {
+  const url = req.url;
+  const ext = path.extname(url); ///這行是用來取得「使用者請求的網址」的副檔名。
 
-  // 處理靜態檔案（CSS、JS、圖片等）
-  const staticExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.ico'];
-  const extname = path.extname(url);
-  
-  if (staticExtensions.includes(extname)) {
-    const filePath = '.' + url;
-    
-    const contentTypes = {
-      '.css': 'text/css',
-      '.js': 'text/javascript',
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.gif': 'image/gif',
-      '.ico': 'image/x-icon'
-    };
+  // 處理靜態檔案
+  const mime = { ///用來對應「副檔名」→「回傳時要告訴瀏覽器的檔案格式」。
+    '.css': 'text/css',
+    '.js': 'text/javascript',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.ico': 'image/x-icon'
+  };
 
-    fs.readFile(filePath, (err, data) => {
+  if (mime[ext]) { // 如果請求的網址是靜態檔案
+    fs.readFile('.' + url, (err, data) => {
       if (err) {
-        console.log('靜態檔案讀取錯誤:', filePath, err);
-        response.writeHead(404);
-        response.end('檔案未找到');
-      } else {
-        response.writeHead(200, {
-          'Content-Type': contentTypes[extname] || 'text/plain'
-        });
-        response.end(data);
+        res.writeHead(404);
+        return res.end('檔案未找到');
       }
+      res.writeHead(200, { 'Content-Type': mime[ext] }); /// 這行是用來告訴瀏覽器回傳的檔案格式
+      return res.end(data);
     });
     return;
   }
 
+  // 使用 switch 路由
   let filePath = '';
   let cssFile = '';
 
-  // 使用 switch 處理路由
   switch (url) {
     case '/':
       filePath = './index.ejs';
@@ -60,31 +51,25 @@ const server = http.createServer(function (request, response) {
       break;
   }
 
-  // 讀取並渲染 EJS 頁面
+  // 讀取與渲染 EJS
   fs.readFile(filePath, 'utf8', (err, data) => {
+    // 若讀取檔案出錯（例如檔案不存在），伺服器會回傳 500 錯誤（Internal Server Error）給瀏覽器：
     if (err) {
-      console.log('EJS 檔案讀取錯誤:', err);
-      response.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      response.end('伺服器讀取檔案錯誤');
-    } else {
-      try {
-        const html = ejs.render(data, {
-          cssFile: cssFile,
-          currentUrl: url
-        });
-        response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        response.end(html);
-      } catch (renderError) {
-        console.log('EJS 渲染錯誤:', renderError);
-        response.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-        response.end('EJS 渲染錯誤');
-      }
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end('伺服器讀取檔案錯誤');
+    }
+    // ejs.render() 是 EJS 模板引擎 提供的函式
+    try {
+      const html = ejs.render(data, { cssFile, currentUrl: url });
+      /// Tell 瀏覽器 這是一個 HTML 頁面，使用 UTF-8 編碼
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+      /// 如果在 EJS 渲染過程中出現錯誤回傳EJS 渲染錯誤
+    } catch {
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('EJS 渲染錯誤');
     }
   });
-});
-
-//3、啟動伺服器監聽8888埠
-const PORT = 8888;
-server.listen(PORT, function () {
-  console.log(`伺服器啟動成功，訪問：http://127.0.0.1:${PORT}`);
+}).listen(8888, () => {
+  console.log('伺服器啟動成功：http://127.0.0.1:8888');
 });
